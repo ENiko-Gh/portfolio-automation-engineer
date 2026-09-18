@@ -1,0 +1,18 @@
+# ================================================================
+# api/.htaccess — Protección extra para la carpeta api/
+# Ubicación: portfolio-automation-engineer/api/.htaccess
+# ================================================================
+
+# Solo config.php debe ser inaccesible desde el navegador
+<Files "config.php">
+    Order Allow,Deny
+    Deny from all
+</Files>
+
+# Solo permitir JSON como respuesta (no ejecución directa)
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+</IfModule>
+
+# Bloquear exploración del directorio
+Options -Indexes

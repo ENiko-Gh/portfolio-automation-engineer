@@ -1,0 +1,49 @@
+# ================================================================
+# .gitignore — Portfolio Edison Guamialama — Repo PÚBLICO
+# ================================================================
+
+# CREDENCIALES — NUNCA A GITHUB
+.env
+.env.local
+.env.production
+.env.*
+
+# LOGS
+logs/*.log
+!logs/.gitkeep
+
+# DEPENDENCIAS
+vendor/
+node_modules/
+composer.phar
+
+# DOCUMENTOS PERSONALES
+assets/pdf/titulo-registro-minedec.pdf
+
+# ARCHIVOS DE DIAGNÓSTICO
+admin/test.php
+admin/debug.php
+
+# SISTEMA
+.DS_Store
+Thumbs.db
+*.tmp
+*.bak
+*.swp
+
+# BACKUPS
+*.backup
+*.old
+
+# FOTOS DUPLICADAS
+assets/images/profile.jpg
+
+# Backups
+*.tar.gz
+*.zip
+
+# Videos pesados
+assets/videos/
+
+# Config con estructura interna
+api/config.php

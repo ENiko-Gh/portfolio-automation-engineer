@@ -1,0 +1,131 @@
+# ================================================================
+# .htaccess RAÍZ — Portfolio Edison Guamialama
+# VERSION LOCALHOST — segura pero sin bloqueos que rompan la web
+# Cuando subas a producción activa las líneas comentadas
+# ================================================================
+
+Options -Indexes
+ServerSignature Off
+
+# ── FORZAR HTTPS ──────────────────────────────────────────────
+# DESACTIVADO en localhost — activar solo en producción
+# RewriteEngine On
+# RewriteCond %{HTTPS} off
+# RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# ── SECURITY HEADERS ──────────────────────────────────────────
+<IfModule mod_headers.c>
+
+    # Evitar clickjacking
+    Header always set X-Frame-Options "SAMEORIGIN"
+
+    # Evitar sniffing de tipo de contenido
+    Header always set X-Content-Type-Options "nosniff"
+
+    # XSS filter
+    Header always set X-XSS-Protection "1; mode=block"
+
+    # Referrer
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+    # Permisos de APIs del navegador
+    Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+
+    # CSP — DESACTIVADO en localhost (rompe animaciones y SVGs locales)
+    # Activar solo en producción con tu dominio real
+    # Header always set Content-Security-Policy "default-src 'self' 'unsafe-inline' https:; img-src 'self' data: https: blob:; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com;"
+
+    # Ocultar versión de PHP
+    Header always unset X-Powered-By
+    Header unset X-Powered-By
+
+    # HSTS — DESACTIVADO en localhost
+    # Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+
+</IfModule>
+
+# ── CORS ──────────────────────────────────────────────────────
+<IfModule mod_headers.c>
+    SetEnvIf Origin "^https://(www\.)?TU_DOMINIO\.com$" CORS_ALLOW=1
+    SetEnvIf Origin "^http://localhost(:[0-9]+)?$"       CORS_ALLOW=1
+    SetEnvIf Origin "^http://127\.0\.0\.1(:[0-9]+)?$"   CORS_ALLOW=1
+
+    Header always set Access-Control-Allow-Origin "%{HTTP_ORIGIN}e" env=CORS_ALLOW
+    Header always set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+    Header always set Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With"
+    Header always set Access-Control-Max-Age "86400"
+</IfModule>
+
+# ── PROTEGER ARCHIVOS SENSIBLES ───────────────────────────────
+<FilesMatch "\.(sql|log|env|bak|ini|phar|sh|bat)$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+<Files "config.php">
+    Order Allow,Deny
+    Deny from all
+</Files>
+
+<FilesMatch "^composer\.(json|lock|phar)$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# ── BLOQUEAR CARPETAS SENSIBLES ───────────────────────────────
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    RewriteRule ^includes/ - [F,L]
+    RewriteRule ^logs/ - [F,L]
+    RewriteRule ^vendor/ - [F,L]
+
+    # Bloquear path traversal
+    RewriteCond %{QUERY_STRING} \.\.\/ [NC]
+    RewriteRule .* - [F,L]
+
+    # Bloquear SQL injection en URL
+    RewriteCond %{QUERY_STRING} (union|select|insert|drop|update|delete|;|--|\/\*) [NC]
+    RewriteRule .* - [F,L]
+
+    # Bloquear bots maliciosos
+    RewriteCond %{HTTP_USER_AGENT} (sqlmap|nikto|nmap|masscan|zgrab) [NC]
+    RewriteRule .* - [F,L]
+</IfModule>
+
+# ── HOTLINKING — DESACTIVADO en localhost ─────────────────────
+# En localhost con puerto :8012 el referer no coincide y bloquea
+# tus propias imágenes y animaciones SVG. Activar solo en producción:
+#
+# <IfModule mod_rewrite.c>
+#     RewriteCond %{HTTP_REFERER} !^$
+#     RewriteCond %{HTTP_REFERER} !^https://(www\.)?TU_DOMINIO\.com [NC]
+#     RewriteRule \.(jpg|jpeg|png|gif|svg|webp)$ - [F,NC]
+# </IfModule>
+
+# ── RATE LIMITING (si el hosting lo soporta) ──────────────────
+#<IfModule mod_evasive20.c>
+#    DOSHashTableSize    3097
+#    DOSPageCount        10
+#    DOSSiteCount        50
+#    DOSPageInterval     1
+#    DOSSiteInterval     1
+#    DOSBlockingPeriod   600
+#</IfModule>
+
+# ── CACHÉ DE ASSETS ESTÁTICOS ─────────────────────────────────
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType image/png              "access plus 30 days"
+    ExpiresByType image/jpeg             "access plus 30 days"
+    ExpiresByType image/svg+xml          "access plus 30 days"
+    ExpiresByType text/css               "access plus 7 days"
+    ExpiresByType application/javascript "access plus 7 days"
+    ExpiresByType application/pdf        "access plus 1 day"
+</IfModule>
+
+# ── COMPRIMIR RESPUESTAS ──────────────────────────────────────
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/css text/javascript
+    AddOutputFilterByType DEFLATE application/javascript application/json
+</IfModule>
